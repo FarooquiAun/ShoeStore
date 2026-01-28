@@ -9,10 +9,14 @@ import com.shoestore.cart.repository.CartRepository;
 import com.shoestore.common.util.SecurityUtil;
 import com.shoestore.order.dto.OrderHistoryResponse;
 import com.shoestore.order.dto.OrderItemResponse;
+import com.shoestore.order.dto.PlaceOrderRequest;
 import com.shoestore.order.entity.Order;
 import com.shoestore.order.entity.OrderItem;
 import com.shoestore.order.repository.OrderItemRepository;
 import com.shoestore.order.repository.OrderRepository;
+import com.shoestore.payment.PaymentRequest;
+import com.shoestore.payment.PaymentResult;
+import com.shoestore.payment.PaymentStrategyFactory;
 import com.shoestore.product.entity.Shoe;
 import com.shoestore.product.repository.ShoeRepository;
 import jakarta.transaction.Transactional;
@@ -29,15 +33,17 @@ public class OrderService {
     private final CartRepository cartRepository;
     private final UserRepository userRepository;
     private final ShoeRepository shoeRepository;
+    private final PaymentStrategyFactory paymentStrategyFactory;
 
-    public OrderService(CartRepository cartRepository, OrderRepository orderRepository, UserRepository userRepository, ShoeRepository shoeRepository) {
+    public OrderService(CartRepository cartRepository, OrderRepository orderRepository, UserRepository userRepository, ShoeRepository shoeRepository, PaymentStrategyFactory paymentStrategyFactory) {
         this.cartRepository = cartRepository;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.shoeRepository = shoeRepository;
+        this.paymentStrategyFactory = paymentStrategyFactory;
     }
     @Transactional
-    public Long placeOrder(){
+    public Long placeOrder(PlaceOrderRequest placeOrderRequest){
         User user=getUser();
         Cart cart=cartRepository.findByUser(user).orElseThrow(
                 ()-> new RuntimeException("Cart is empty")
@@ -64,6 +70,17 @@ public class OrderService {
         }
         order.setAmount(total);
         orderRepository.save(order);
+        PaymentRequest paymentRequest=new PaymentRequest();
+        paymentRequest.setOrderId(order.getId());
+        paymentRequest.setAmount(total);
+        paymentRequest.setPaymentMethod(placeOrderRequest.getPaymentMethod());
+
+        PaymentResult result=paymentStrategyFactory.
+                getStrategy(placeOrderRequest.getPaymentMethod()).
+                pay(paymentRequest);
+         if (!result.isSuccess()){
+             throw new RuntimeException("Payment failed");
+         }
 
         cart.getItems().clear();
         cartRepository.save(cart);
