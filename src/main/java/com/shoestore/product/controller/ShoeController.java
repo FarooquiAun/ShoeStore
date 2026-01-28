@@ -3,7 +3,6 @@ package com.shoestore.product.controller;
 import com.shoestore.product.dto.ShoeRequest;
 import com.shoestore.product.dto.ShoeResponse;
 import com.shoestore.product.service.ShoeService;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

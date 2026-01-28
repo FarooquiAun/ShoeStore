@@ -18,6 +18,7 @@ public class AuthController {
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
+    @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody @Valid RegisterRequestDto request){
         authService.RegisterRequest(request);
         return ResponseEntity.ok("User registered successfully");

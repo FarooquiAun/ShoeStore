@@ -4,10 +4,12 @@ import com.shoestore.product.dto.ShoeRequest;
 import com.shoestore.product.dto.ShoeResponse;
 import com.shoestore.product.entity.Shoe;
 import com.shoestore.product.repository.ShoeRepository;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Service
 public class ShoeService {
     private final ShoeRepository shoeRepository;
 
