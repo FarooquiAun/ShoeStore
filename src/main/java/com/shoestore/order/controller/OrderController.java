@@ -1,13 +1,11 @@
 package com.shoestore.order.controller;
 
 import com.shoestore.order.dto.OrderHistoryResponse;
+import com.shoestore.order.dto.PlaceOrderRequest;
 import com.shoestore.order.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,8 +21,8 @@ public class OrderController {
     }
 
     @PostMapping("/place")
-    public ResponseEntity<Long> placeOrder() {
-        return ResponseEntity.ok(orderService.placeOrder());
+    public ResponseEntity<Long> placeOrder(@RequestBody PlaceOrderRequest placeOrderRequest) {
+        return ResponseEntity.ok(orderService.placeOrder(placeOrderRequest));
     }
 
     @GetMapping("/my")
