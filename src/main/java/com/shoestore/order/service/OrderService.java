@@ -7,6 +7,8 @@ import com.shoestore.cart.entity.Cart;
 import com.shoestore.cart.entity.CartItem;
 import com.shoestore.cart.repository.CartRepository;
 import com.shoestore.common.util.SecurityUtil;
+import com.shoestore.order.dto.OrderHistoryResponse;
+import com.shoestore.order.dto.OrderItemResponse;
 import com.shoestore.order.entity.Order;
 import com.shoestore.order.entity.OrderItem;
 import com.shoestore.order.repository.OrderItemRepository;
@@ -18,6 +20,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -66,6 +70,28 @@ public class OrderService {
 
         return order.getId();
 
+    }
+    public List<OrderHistoryResponse> getMyOrders(){
+        User user=getUser();
+        List<Order> orders=orderRepository.findByUserOrderByCreatedAtDesc(user);
+        return orders.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+    public OrderHistoryResponse mapToResponse(Order order){
+        OrderHistoryResponse response=new OrderHistoryResponse();
+        response.setOrderId(order.getId());
+        response.setTotalAmount(order.getAmount());
+        response.setCreatedAt(order.getCreatedAt());
+        List<OrderItemResponse> resList=order.getOrderItemList().stream()
+                .map(item->{
+                    OrderItemResponse r=new OrderItemResponse();
+                    r.setShoeId(item.getId());
+                    r.setPrice(item.getPriceAtPurchase());
+                    r.setShoeName(item.getShoe().getName());
+                    r.setQuantity(item.getQuantity());
+                    return r;
+                }).collect(Collectors.toList());
+        response.setItems(resList);
+        return response;
     }
     private User getUser(){
         CustomUserDetails details= SecurityUtil.getCurrentUserDetails();
