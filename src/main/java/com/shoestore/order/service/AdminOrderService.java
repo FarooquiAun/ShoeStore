@@ -5,6 +5,7 @@ import com.shoestore.order.dto.AdminOrderItemResponse;
 import com.shoestore.order.dto.AdminOrderResponse;
 import com.shoestore.order.entity.Order;
 import com.shoestore.order.repository.OrderRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,9 +18,9 @@ public class AdminOrderService {
     public AdminOrderService(OrderRepository orderRepository) {
         this.orderRepository = orderRepository;
     }
-    public List<AdminOrderResponse> getAllOrders(){
+    public List<AdminOrderResponse> getAllOrders(Pageable pageable){
 
-        return orderRepository.findAllByOrderByCreatedAtDesc().stream()
+        return orderRepository.findAllByOrderByCreatedAtDesc(pageable).stream()
                 .map(this::mapToResponse).collect(Collectors.toList());
 
     }

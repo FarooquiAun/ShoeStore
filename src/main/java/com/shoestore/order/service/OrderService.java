@@ -6,6 +6,8 @@ import com.shoestore.auth.security.CustomUserDetails;
 import com.shoestore.cart.entity.Cart;
 import com.shoestore.cart.entity.CartItem;
 import com.shoestore.cart.repository.CartRepository;
+import com.shoestore.common.enums.PaymentMethod;
+import com.shoestore.common.enums.PaymentStatus;
 import com.shoestore.common.util.SecurityUtil;
 import com.shoestore.order.dto.OrderHistoryResponse;
 import com.shoestore.order.dto.OrderItemResponse;
@@ -17,6 +19,7 @@ import com.shoestore.order.repository.OrderRepository;
 import com.shoestore.payment.PaymentRequest;
 import com.shoestore.payment.PaymentResult;
 import com.shoestore.payment.PaymentStrategyFactory;
+import com.shoestore.payment.entity.Payment;
 import com.shoestore.product.entity.Shoe;
 import com.shoestore.product.repository.ShoeRepository;
 import jakarta.transaction.Transactional;
@@ -70,6 +73,10 @@ public class OrderService {
         }
         order.setAmount(total);
         orderRepository.save(order);
+
+
+        Payment payment=new Payment(order, PaymentMethod.valueOf(placeOrderRequest.getPaymentMethod()),total);
+
         PaymentRequest paymentRequest=new PaymentRequest();
         paymentRequest.setOrderId(order.getId());
         paymentRequest.setAmount(total);
@@ -78,9 +85,14 @@ public class OrderService {
         PaymentResult result=paymentStrategyFactory.
                 getStrategy(placeOrderRequest.getPaymentMethod()).
                 pay(paymentRequest);
-         if (!result.isSuccess()){
-             throw new RuntimeException("Payment failed");
-         }
+
+        if (result.isSuccess()){
+            payment.setPaymentStatus(PaymentStatus.SUCCESS);
+            payment.setTransactionId(result.getTransactionId());
+        }else {
+            payment.setPaymentStatus(PaymentStatus.FAILED);
+            throw new RuntimeException("Payment Failed");
+        }
 
         cart.getItems().clear();
         cartRepository.save(cart);
