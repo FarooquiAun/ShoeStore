@@ -1,5 +1,6 @@
 package com.shoestore.product.service;
 
+import com.shoestore.common.exceptions.ResourceNotFoundException;
 import com.shoestore.product.dto.ShoeRequest;
 import com.shoestore.product.dto.ShoeResponse;
 import com.shoestore.product.entity.Shoe;
@@ -30,7 +31,7 @@ public class ShoeService {
     }
     public ShoeResponse updateShoe(Long id,ShoeRequest shoeRequest){
         Shoe shoe=shoeRepository.findById(id).orElseThrow(
-                ()-> new RuntimeException("shoe not found")
+                ()-> new ResourceNotFoundException("shoe not found")
         );
         shoe.setName(shoeRequest.getName());
         shoe.setBrand(shoeRequest.getBrand());
@@ -43,7 +44,7 @@ public class ShoeService {
 
     public void deactivateShoe(Long id){
         Shoe shoe=shoeRepository.findById(id).orElseThrow(
-                ()-> new RuntimeException("shoe not found")
+                ()-> new ResourceNotFoundException("shoe not found")
         );
         shoe.setActive(false);
         shoeRepository.save(shoe);
@@ -56,7 +57,7 @@ public class ShoeService {
     public ShoeResponse getShoeById(Long id) {
         Shoe shoe = shoeRepository.findById(id)
                 .filter(Shoe::isActive)
-                .orElseThrow(() -> new RuntimeException("Shoe not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Shoe not found"));
         return mapToResponse(shoe);
     }
 

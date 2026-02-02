@@ -9,6 +9,8 @@ import com.shoestore.cart.repository.CartRepository;
 import com.shoestore.common.enums.PaymentMethod;
 import com.shoestore.common.enums.PaymentStatus;
 import com.shoestore.common.util.SecurityUtil;
+import com.shoestore.common.exceptions.BadRequestException;
+import com.shoestore.common.exceptions.ResourceNotFoundException;
 import com.shoestore.order.dto.OrderHistoryResponse;
 import com.shoestore.order.dto.OrderItemResponse;
 import com.shoestore.order.dto.PlaceOrderRequest;
@@ -49,17 +51,17 @@ public class OrderService {
     public Long placeOrder(PlaceOrderRequest placeOrderRequest){
         User user=getUser();
         Cart cart=cartRepository.findByUser(user).orElseThrow(
-                ()-> new RuntimeException("Cart is empty")
+                ()-> new ResourceNotFoundException("Cart is empty")
         );
         if (cart.getItems().isEmpty()){
-            throw new RuntimeException("Cart has no items");
+            throw new ResourceNotFoundException("Cart has no items");
         }
         Order order=new Order(user);
         BigDecimal total=BigDecimal.ZERO;
         for (CartItem item:cart.getItems()){
             Shoe shoe=item.getShoe();
             if(shoe.getStock()< item.getQuantity()){
-                throw new RuntimeException("In sufficent stock for"+shoe.getName());
+                throw new BadRequestException("In sufficent stock for"+shoe.getName());
             }
             shoe.setStock(shoe.getStock()- item.getQuantity());
 
@@ -86,13 +88,19 @@ public class OrderService {
                 getStrategy(placeOrderRequest.getPaymentMethod()).
                 pay(paymentRequest);
 
+         if (!result.isSuccess()){
+             throw new ResourceNotFoundException("Payment failed");
+         }
+
+
         if (result.isSuccess()){
             payment.setPaymentStatus(PaymentStatus.SUCCESS);
             payment.setTransactionId(result.getTransactionId());
         }else {
             payment.setPaymentStatus(PaymentStatus.FAILED);
-            throw new RuntimeException("Payment Failed");
+            throw new ResourceNotFoundException("Payment Failed");
         }
+
 
         cart.getItems().clear();
         cartRepository.save(cart);
@@ -125,7 +133,7 @@ public class OrderService {
     private User getUser(){
         CustomUserDetails details= SecurityUtil.getCurrentUserDetails();
         return userRepository.findById(details.getUserId()).orElseThrow(
-                ()-> new RuntimeException("User not found")
+                ()-> new ResourceNotFoundException("User not found")
         );
     }
 }
