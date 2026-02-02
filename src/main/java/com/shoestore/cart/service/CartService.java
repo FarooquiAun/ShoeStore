@@ -2,7 +2,6 @@ package com.shoestore.cart.service;
 
 import com.shoestore.auth.entity.User;
 import com.shoestore.auth.repository.UserRepository;
-import com.shoestore.auth.security.CustomUserDetailService;
 import com.shoestore.auth.security.CustomUserDetails;
 import com.shoestore.cart.dto.AddToCartRequest;
 import com.shoestore.cart.dto.CartItemResponse;
@@ -11,6 +10,7 @@ import com.shoestore.cart.entity.Cart;
 import com.shoestore.cart.entity.CartItem;
 import com.shoestore.cart.repository.CartRepository;
 import com.shoestore.common.util.SecurityUtil;
+import com.shoestore.common.exceptions.ResourceNotFoundException;
 import com.shoestore.product.entity.Shoe;
 import com.shoestore.product.repository.ShoeRepository;
 import jakarta.transaction.Transactional;
@@ -36,7 +36,7 @@ public class CartService {
     public void addToCart( AddToCartRequest request){
         User user=getCurrentUser();
         Shoe shoe=shoeRepository.findById(request.getShoeId()).orElseThrow(
-                ()-> new RuntimeException("Shoe Not found")
+                ()-> new ResourceNotFoundException("Shoe Not found")
         );
         Cart cart=cartRepository.findByUser(user).orElseGet(
                 ()->{
@@ -58,7 +58,7 @@ public class CartService {
     public CartResponse viewCart(){
         User user=getCurrentUser();
         Cart cart = cartRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Cart empty"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cart empty"));
 
         CartResponse response = new CartResponse();
 
@@ -83,7 +83,7 @@ public class CartService {
         CustomUserDetails userDetails = SecurityUtil.getCurrentUserDetails();
         System.out.println("JWT USER ID = " + userDetails.getUserId());
         return userRepository.findById(userDetails.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
 }
