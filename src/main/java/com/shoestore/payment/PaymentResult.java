@@ -9,6 +9,15 @@ public class PaymentResult {
         return message;
     }
 
+    public PaymentResult() {
+    }
+
+    public PaymentResult(String message, boolean success, String transactionId) {
+        this.message = message;
+        this.success = success;
+        this.transactionId = transactionId;
+    }
+
     public void setMessage(String message) {
         this.message = message;
     }
