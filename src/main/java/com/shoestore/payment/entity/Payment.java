@@ -36,6 +36,9 @@ public class Payment {
 
     private LocalDateTime createdAt=LocalDateTime.now();
 
+    private LocalDateTime refundedAt;
+
+
     protected Payment(){
 
     }
@@ -101,5 +104,13 @@ public class Payment {
 
     public void setTransactionId(String transactionId) {
         this.transactionId = transactionId;
+    }
+
+    public LocalDateTime getRefundedAt() {
+        return refundedAt;
+    }
+
+    public void setRefundedAt(LocalDateTime refundedAt) {
+        this.refundedAt = refundedAt;
     }
 }

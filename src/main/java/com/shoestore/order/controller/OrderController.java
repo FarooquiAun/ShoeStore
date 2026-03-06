@@ -29,4 +29,10 @@ public class OrderController {
     public ResponseEntity<List<OrderHistoryResponse>> getOrders(){
         return ResponseEntity.ok(orderService.getMyOrders());
     }
+
+    @PutMapping("/{orderId}/cancel")
+    public void cancelOrder(@PathVariable Long orderId) {
+        orderService.cancelOrder(orderId);
+    }
+
 }
