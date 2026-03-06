@@ -6,8 +6,10 @@ import com.shoestore.auth.security.CustomUserDetails;
 import com.shoestore.cart.entity.Cart;
 import com.shoestore.cart.entity.CartItem;
 import com.shoestore.cart.repository.CartRepository;
+import com.shoestore.common.enums.OrderStatus;
 import com.shoestore.common.enums.PaymentMethod;
 import com.shoestore.common.enums.PaymentStatus;
+import com.shoestore.common.exceptions.UnauthorizedException;
 import com.shoestore.common.util.SecurityUtil;
 import com.shoestore.common.exceptions.BadRequestException;
 import com.shoestore.common.exceptions.ResourceNotFoundException;
@@ -22,6 +24,7 @@ import com.shoestore.payment.PaymentRequest;
 import com.shoestore.payment.PaymentResult;
 import com.shoestore.payment.PaymentStrategyFactory;
 import com.shoestore.payment.entity.Payment;
+import com.shoestore.payment.service.PaymentService;
 import com.shoestore.product.entity.Shoe;
 import com.shoestore.product.repository.ShoeRepository;
 import jakarta.transaction.Transactional;
@@ -39,13 +42,15 @@ public class OrderService {
     private final UserRepository userRepository;
     private final ShoeRepository shoeRepository;
     private final PaymentStrategyFactory paymentStrategyFactory;
+    private final PaymentService paymentService;
 
-    public OrderService(CartRepository cartRepository, OrderRepository orderRepository, UserRepository userRepository, ShoeRepository shoeRepository, PaymentStrategyFactory paymentStrategyFactory) {
+    public OrderService(CartRepository cartRepository, OrderRepository orderRepository, UserRepository userRepository, ShoeRepository shoeRepository, PaymentStrategyFactory paymentStrategyFactory, PaymentService paymentService) {
         this.cartRepository = cartRepository;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.shoeRepository = shoeRepository;
         this.paymentStrategyFactory = paymentStrategyFactory;
+        this.paymentService = paymentService;
     }
     @Transactional
     public Long placeOrder(PlaceOrderRequest placeOrderRequest){
@@ -130,6 +135,27 @@ public class OrderService {
         response.setItems(resList);
         return response;
     }
+
+    @Transactional
+    public void cancelOrder(Long orderId){
+        User user=getUser();
+        Order order=orderRepository.findById(orderId).orElseThrow(
+                ()-> new ResourceNotFoundException("order Not found")
+        );
+        if (!order.getUser().getId().equals(user.getId())){
+            throw  new UnauthorizedException("Cannot cancel the order");
+        }
+        if (order.getOrderStatus()== OrderStatus.DELIVERED){
+            throw new BadRequestException("Delivered order cannot be cancelled");
+        }
+        for(OrderItem item:order.getOrderItemList()){
+            Shoe shoe=item.getShoe();
+            shoe.setStock(shoe.getStock()+item.getQuantity());
+        }
+        paymentService.refundPayment(order);
+
+    }
+
     private User getUser(){
         CustomUserDetails details= SecurityUtil.getCurrentUserDetails();
         return userRepository.findById(details.getUserId()).orElseThrow(
