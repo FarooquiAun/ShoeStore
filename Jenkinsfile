@@ -17,8 +17,13 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'ls -l target'
-                sh 'docker build -t shoestore-app .'
+                sh 'docker build -t farooquiaun/shoestore-app:latest .'
+            }
+        }
+
+        stage('Push Image to DockerHub') {
+            steps {
+                sh 'docker push farooquiaun/shoestore-app:latest'
             }
         }
 
