@@ -5,8 +5,13 @@ import com.shoestore.product.dto.ShoeRequest;
 import com.shoestore.product.dto.ShoeResponse;
 import com.shoestore.product.entity.Shoe;
 import com.shoestore.product.repository.ShoeRepository;
+import com.shoestore.product.specification.ShoeSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,16 +54,36 @@ public class ShoeService {
         shoe.setActive(false);
         shoeRepository.save(shoe);
     }
-    public List<ShoeResponse> getAllActiveShoes(){
-        return shoeRepository.findByActiveTrue()
-                .stream().map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public Page<ShoeResponse> getAllActiveShoes(Pageable pageable){
+
+        Page<Shoe> shoePage = shoeRepository.findByActiveTrue(pageable);
+
+        return shoePage.map(this::mapToResponse);
     }
     public ShoeResponse getShoeById(Long id) {
         Shoe shoe = shoeRepository.findById(id)
                 .filter(Shoe::isActive)
                 .orElseThrow(() -> new ResourceNotFoundException("Shoe not found"));
         return mapToResponse(shoe);
+    }
+    public Page<ShoeResponse> searchShoes(
+            String brand,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            String name,
+            Pageable pageable
+    ) {
+
+        Specification<Shoe> spec = Specification
+                .where(ShoeSpecification.isActive())
+                .and(ShoeSpecification.hasBrand(brand))
+                .and(ShoeSpecification.minPrice(minPrice))
+                .and(ShoeSpecification.maxPrice(maxPrice))
+                .and(ShoeSpecification.nameContains(name));
+
+        return shoeRepository
+                .findAll(spec, pageable)
+                .map(this::mapToResponse);
     }
 
     private ShoeResponse mapToResponse(Shoe shoe) {

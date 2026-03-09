@@ -31,6 +31,9 @@ public class Shoe {
     @Column(nullable = false)
     private boolean active;
 
+    @Version
+    private Long version;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -130,11 +133,11 @@ public class Shoe {
         this.description = description;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

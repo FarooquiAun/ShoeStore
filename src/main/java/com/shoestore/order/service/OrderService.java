@@ -24,6 +24,7 @@ import com.shoestore.payment.PaymentRequest;
 import com.shoestore.payment.PaymentResult;
 import com.shoestore.payment.PaymentStrategyFactory;
 import com.shoestore.payment.entity.Payment;
+import com.shoestore.payment.repository.PaymentRepository;
 import com.shoestore.payment.service.PaymentService;
 import com.shoestore.product.entity.Shoe;
 import com.shoestore.product.repository.ShoeRepository;
@@ -43,14 +44,16 @@ public class OrderService {
     private final ShoeRepository shoeRepository;
     private final PaymentStrategyFactory paymentStrategyFactory;
     private final PaymentService paymentService;
+    private final PaymentRepository paymentRepository;
 
-    public OrderService(CartRepository cartRepository, OrderRepository orderRepository, UserRepository userRepository, ShoeRepository shoeRepository, PaymentStrategyFactory paymentStrategyFactory, PaymentService paymentService) {
+    public OrderService(CartRepository cartRepository, OrderRepository orderRepository, UserRepository userRepository, ShoeRepository shoeRepository, PaymentStrategyFactory paymentStrategyFactory, PaymentService paymentService, PaymentRepository paymentRepository) {
         this.cartRepository = cartRepository;
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.shoeRepository = shoeRepository;
         this.paymentStrategyFactory = paymentStrategyFactory;
         this.paymentService = paymentService;
+        this.paymentRepository = paymentRepository;
     }
     @Transactional
     public Long placeOrder(PlaceOrderRequest placeOrderRequest){
@@ -69,7 +72,7 @@ public class OrderService {
                 throw new BadRequestException("In sufficent stock for"+shoe.getName());
             }
             shoe.setStock(shoe.getStock()- item.getQuantity());
-
+            shoeRepository.save(shoe);
             OrderItem orderItem=new OrderItem(order,shoe,item.getQuantity());
             order.getOrderItemList().add(orderItem);
             total=total.add(
@@ -93,22 +96,25 @@ public class OrderService {
                 getStrategy(placeOrderRequest.getPaymentMethod()).
                 pay(paymentRequest);
 
-         if (!result.isSuccess()){
-             throw new ResourceNotFoundException("Payment failed");
-         }
 
 
-        if (result.isSuccess()){
+        if (result.isSuccess()) {
+
             payment.setPaymentStatus(PaymentStatus.SUCCESS);
             payment.setTransactionId(result.getTransactionId());
-        }else {
+            order.setOrderStatus(OrderStatus.CONFIRMED);
+            cart.getItems().clear();
+            cartRepository.save(cart);
+
+        } else {
+
             payment.setPaymentStatus(PaymentStatus.FAILED);
-            throw new ResourceNotFoundException("Payment Failed");
+            throw new BadRequestException("Payment failed");
+
         }
 
+        paymentRepository.save(payment);
 
-        cart.getItems().clear();
-        cartRepository.save(cart);
 
         return order.getId();
 
@@ -126,7 +132,7 @@ public class OrderService {
         List<OrderItemResponse> resList=order.getOrderItemList().stream()
                 .map(item->{
                     OrderItemResponse r=new OrderItemResponse();
-                    r.setShoeId(item.getId());
+                    r.setShoeId(item.getShoe().getId());
                     r.setPrice(item.getPriceAtPurchase());
                     r.setShoeName(item.getShoe().getName());
                     r.setQuantity(item.getQuantity());
@@ -152,6 +158,8 @@ public class OrderService {
             Shoe shoe=item.getShoe();
             shoe.setStock(shoe.getStock()+item.getQuantity());
         }
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
         paymentService.refundPayment(order);
 
     }

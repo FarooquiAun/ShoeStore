@@ -3,10 +3,13 @@ package com.shoestore.product.controller;
 import com.shoestore.product.dto.ShoeRequest;
 import com.shoestore.product.dto.ShoeResponse;
 import com.shoestore.product.service.ShoeService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -18,9 +21,9 @@ public class ShoeController {
         this.shoeService = shoeService;
     }
     @GetMapping("/shoes")
-    public ResponseEntity<List<ShoeResponse>> getAllShoes(){
+    public ResponseEntity<Page<ShoeResponse>> getAllShoes(Pageable pageable){
 
-        return ResponseEntity.ok(shoeService.getAllActiveShoes());
+        return ResponseEntity.ok(shoeService.getAllActiveShoes(pageable));
     }
     @GetMapping("/shoe/{id}")
     public ResponseEntity<ShoeResponse> getShoe(@PathVariable Long id){
@@ -45,6 +48,27 @@ public class ShoeController {
     public ResponseEntity<Void> deactivateShoe(@PathVariable Long id) {
         shoeService.deactivateShoe(id);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/search")
+    public ResponseEntity<Page<ShoeResponse>> searchShoes(
+
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String name,
+            Pageable pageable
+    ) {
+
+        Page<ShoeResponse> result =
+                shoeService.searchShoes(
+                        brand,
+                        minPrice,
+                        maxPrice,
+                        name,
+                        pageable
+                );
+
+        return ResponseEntity.ok(result);
     }
 
 
