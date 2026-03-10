@@ -1,5 +1,6 @@
 package com.shoestore.common.exceptions;
 
+import jakarta.persistence.OptimisticLockException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,5 +33,16 @@ public class GlobalExceptionHandler {
                 "Something went wrong"
         );
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(OptimisticLockException.class)
+    public ResponseEntity<ApiError> handleOptimisticLock() {
+
+        ApiError error=new ApiError(
+                HttpStatus.CONTINUE.value(),
+                "Inventory updated. Please retry."
+        );
+
+        return new ResponseEntity<>(error,HttpStatus.CONFLICT);
     }
 }

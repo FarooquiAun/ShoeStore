@@ -26,7 +26,7 @@ public class Order {
 
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "order",cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order",cascade = CascadeType.ALL,orphanRemoval = true)
     private List<OrderItem> orderItemList=new ArrayList<>();
     public Order(){
 
@@ -83,5 +83,10 @@ public class Order {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public void addOrderItem(OrderItem item) {
+        orderItemList.add(item);
+        item.setOrder(this);
     }
 }

@@ -64,4 +64,14 @@ public class Cart {
     public void setUser(User user) {
         this.user = user;
     }
+
+    public void addItem(CartItem item) {
+        items.add(item);
+        item.setCart(this);
+    }
+
+    public void removeItem(CartItem item) {
+        items.remove(item);
+        item.setCart(null);
+    }
 }
